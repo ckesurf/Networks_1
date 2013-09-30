@@ -28,7 +28,7 @@ public class TCPServer {
 	                outToClient.writeBytes(output + '\n');
 	            }
 				
-	            outToClient.writeBytes("FINISH");
+	            outToClient.writeBytes("FINISH\n");
 	            
 			} catch (IOException e) {
 	            System.out.println("Exception occurred: ");
@@ -36,9 +36,6 @@ public class TCPServer {
 	            System.exit(-1);
 	        }
 			
-			
-			capitalizedSentence = clientSentence.toUpperCase() + '\n';
-			outToClient.writeBytes(capitalizedSentence);
 		}
 	}
 }

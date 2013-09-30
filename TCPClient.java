@@ -18,11 +18,11 @@ public class TCPClient {
 		
 		// now read input from server
 		outputFromServer = inFromServer.readLine();
-		while (outputFromServer != "FINISH") {
-			outputFromServer = inFromServer.readLine();
+		while (!outputFromServer.equals("FINISH")) {
 			System.out.println(outputFromServer);
+			outputFromServer = inFromServer.readLine();
 		}
-		
+		System.out.println("Client socket now closing");
 		clientSocket.close();
 	}
 }
