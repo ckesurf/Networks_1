@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 public class TCPServer {
 	public Hashtable<String, String> entries = new Hashtable<String, String>();
 	public Hashtable<String, Long> blacklist = new Hashtable<String, Long>();
+	public Hashtable<String, Long> online_users = new Hashtable<String, Long>();
 
 	public static void main(String argv[]) throws Exception
 	{
@@ -131,13 +132,16 @@ public class TCPServer {
 			}
 
 			System.out.println(username + " is logged in.");
-			outToClient.writeBytes("\n***** Welcome to Chris's Remote Server! Please execute a command *****\n");
+			outToClient.writeBytes("\n***** Welcome to Chris's Remote Server! *****\n> \n");
 
 
 			/* take inputs from client, execute commands */
 			String clientCmd, output;
 			while(clientSocket.isConnected()) {
+				/* wait until inFromClient has some command */
+				while(!inFromClient.ready());
 
+				/* read in command */
 				clientCmd = inFromClient.readLine();
 
 				try {
@@ -149,13 +153,22 @@ public class TCPServer {
 					System.out.println("Here is the standard output of the command:\n");
 					while ((output = stdInput.readLine()) != null) {
 						System.out.println(output);
-						outToClient.writeBytes(output + '\n');
+						/* if output is a blank line, just send that. Don't send two blank lines */
+						if (output.equals('\n')) {
+							outToClient.writeBytes(output);
+						} else {
+							outToClient.writeBytes(output + '\n');
+						}
 					}
+					outToClient.writeBytes("\n> \n");
 
 				} catch (IOException e) {
-					System.out.println("Exception occurred: ");
+					outToClient.writeBytes("Unrecognized command\n");
+					System.out.println("Unrecognized command from client socket [" + 
+							clientSocket.getRemoteSocketAddress() +  "] \nError details: ");
 					e.printStackTrace();
-					System.exit(-1);
+					outToClient.writeBytes(e.getMessage() + '\n');
+					outToClient.writeBytes("\n> \n");
 				}
 			}
 		}

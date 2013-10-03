@@ -74,7 +74,7 @@ public class TCPClient {
 			close(clientSocket);
 			return;
 		}
-		
+
 		/* else, give commands! */
 		String command;
 		while (clientSocket.isConnected()) {
@@ -82,12 +82,25 @@ public class TCPClient {
 			while (inFromServer.ready()) {
 				outputFromServer = inFromServer.readLine();
 				System.out.println(outputFromServer);
+				/* if output is a prompt for command, break and enter command */
+				if (outputFromServer.equals("> ")) {
+					break;
+				} else {
+					/* otherwise, block for server to continue writing output */
+					while(!inFromServer.ready());
+				}
+				
 			}
 
+			/* user enters a command */
 			command = inFromUser.readLine();
 			outToServer.writeBytes(command + '\n');
-			outputFromServer = inFromServer.readLine();
+
+			/* wait for response */
+			while (!inFromServer.ready());
+
 		}
+		
 		close(clientSocket);
 		return;
 	}
