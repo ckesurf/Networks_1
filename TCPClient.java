@@ -19,9 +19,12 @@ public class TCPClient {
 		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
 						clientSocket.getInputStream()));
 		
-		/* will get prompted for username */
-		System.out.println(inFromServer.readLine());
-		
+		/* will get prompted for username, unless blackl */
+		outputFromServer = inFromServer.readLine();
+		System.out.println(outputFromServer);
+		if (!outputFromServer.equals("username: ")) {
+			close(clientSocket);
+		}
 		/* give username to server */
 		username = inFromUser.readLine();
 		outToServer.writeBytes(username + '\n');
@@ -65,7 +68,7 @@ public class TCPClient {
 		
 		/* are we locked out? */
 		if (outputFromServer.equals("You've entered the wrong password too " +
-						"many times. You will be locked for 90 seconds. ")) {
+						"many times. You will be locked for 60 seconds. ")) {
 			/* if so, close out */
 			System.out.println(outputFromServer);
 			close(clientSocket);
@@ -73,11 +76,18 @@ public class TCPClient {
 		}
 		
 		/* else, give commands! */
-		
-//		while (!outputFromServer.equals("FINISH")) {
-//			System.out.println(outputFromServer);
-//			outputFromServer = inFromServer.readLine();
-//		}
+		String command;
+		while (clientSocket.isConnected()) {
+			/* read all and any server output */
+			while (inFromServer.ready()) {
+				outputFromServer = inFromServer.readLine();
+				System.out.println(outputFromServer);
+			}
+
+			command = inFromUser.readLine();
+			outToServer.writeBytes(command + '\n');
+			outputFromServer = inFromServer.readLine();
+		}
 		close(clientSocket);
 		return;
 	}

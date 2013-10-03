@@ -4,8 +4,8 @@ import java.net.*;
 import java.util.*;
 
 public class TCPServer {
-	private Hashtable<String, String> entries;
-	private Set<SocketAddress> blacklist = new HashSet<SocketAddress>();
+	private Hashtable<String, String> entries = new Hashtable<String, String>();
+	private Hashtable<String, Long> blacklist = new Hashtable<String, Long>();
 
 	public static void main(String argv[]) throws Exception
 	{
@@ -33,38 +33,51 @@ public class TCPServer {
 
 	public void handleClient(Socket connectionSocket) throws Exception
 	{
-		String clientSentence;
-		String output;
-		String capitalizedSentence;
-
 		BufferedReader inFromClient = new BufferedReader(new InputStreamReader(
 				connectionSocket.getInputStream()));
 		DataOutputStream outToClient = new DataOutputStream(
 				connectionSocket.getOutputStream());
 
+		/* is client blacklisted? */
+		String ipAddressFull = connectionSocket.getRemoteSocketAddress().toString();
+		String ipAddress = ipAddressFull.split(":")[0];
+		if (blacklist.containsKey(ipAddress)) {
+			/* if 60 seconds have elapsed, remove the IP address from blacklist and carry on as usual */ 
+			long elapsedTime = (System.currentTimeMillis() - blacklist.get(ipAddress))/1000;
+			if (elapsedTime > 60) {
+				blacklist.remove(ipAddress);
+			} else {
+				/* Otherwise, block the user */
+				outToClient.writeBytes("You are blacklisted. Please wait 90 seconds to login again.\n");
+				return;
+			}
+		}
+
 		/* ask for username */
 		outToClient.writeBytes("username: \n");
 		String username = inFromClient.readLine();
-		
-		
+
+
 		while (!entries.containsKey(username)) {
 			outToClient.writeBytes("Not a valid username, please try again\n");
 			outToClient.writeBytes("username: \n");
 			username = inFromClient.readLine();
 		}
-		
+
 		/* ask for password */
 		outToClient.writeBytes("password: \n");
 		String password = inFromClient.readLine();
-		
+
 		int incorrect = 0;
 		String real_password = entries.get(username);
 		while (!real_password.equals(password)) {
 			incorrect++;
 			if (incorrect >= 3) {
-				SocketAddress banned_IP = connectionSocket.getRemoteSocketAddress();
-				blacklist.add(banned_IP);
-				
+				/* blacklist client IP address */
+				String bannedIPFull = connectionSocket.getRemoteSocketAddress().toString();
+				String bannedIP = bannedIPFull.split(":")[0];
+				blacklist.put(bannedIP, System.currentTimeMillis());
+
 				outToClient.writeBytes("You've entered the wrong password too " +
 						"many times. You will be locked for 90 seconds. \n");
 				connectionSocket.close();
@@ -73,38 +86,37 @@ public class TCPServer {
 			outToClient.writeBytes("Not a valid password, please try again\n");
 			outToClient.writeBytes("password: \n");
 			password = inFromClient.readLine();
-			
+
 		}
 
 		System.out.println(username + " is logged in.");
-		outToClient.writeBytes("You're logged in!\n");
+		outToClient.writeBytes("\n***** Welcome to Chris's Remote Server! Please execute a command *****\n");
 
 
-		
-		
-		
-		
-//		clientSentence = inFromClient.readLine();
-//
-//		try {
-//			Process p = Runtime.getRuntime().exec(clientSentence);
-//			BufferedReader stdInput = new BufferedReader(new 
-//					InputStreamReader(p.getInputStream()));
-//
-//			// read the output from the command
-//			System.out.println("Here is the standard output of the command:\n");
-//			while ((output = stdInput.readLine()) != null) {
-//				System.out.println(output);
-//				outToClient.writeBytes(output + '\n');
-//			}
-//
-//			outToClient.writeBytes("FINISH\n");
-//
-//		} catch (IOException e) {
-//			System.out.println("Exception occurred: ");
-//			e.printStackTrace();
-//			System.exit(-1);
-//		}
+		/* take inputs from client, execute commands */
+		String clientCmd, output;
+		while(connectionSocket.isConnected()) {
+			
+			clientCmd = inFromClient.readLine();
+	
+			try {
+				Process p = Runtime.getRuntime().exec(clientCmd);
+				BufferedReader stdInput = new BufferedReader(new 
+						InputStreamReader(p.getInputStream()));
+	
+				// read the output from the command
+				System.out.println("Here is the standard output of the command:\n");
+				while ((output = stdInput.readLine()) != null) {
+					System.out.println(output);
+					outToClient.writeBytes(output + '\n');
+				}
+	
+			} catch (IOException e) {
+				System.out.println("Exception occurred: ");
+				e.printStackTrace();
+				System.exit(-1);
+			}
+		}
 	}
 
 
