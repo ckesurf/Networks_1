@@ -27,7 +27,7 @@ public class ReadCSV {
 		br = new BufferedReader(new FileReader(csvFile));
 		while ((line = br.readLine()) != null) {
 			
-		        // use comma and space as separator
+		    // use comma and space as separator
 			String[] entry = line.split(csvSplitBy);
 			
 			entries.put(entry[0], entry[1]);
@@ -48,7 +48,6 @@ public class ReadCSV {
 		}
 	}
  
-	System.out.println("Done");
 	return entries;
   }
  
