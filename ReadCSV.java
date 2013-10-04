@@ -19,7 +19,7 @@ public class ReadCSV {
 	String csvFile = current_dir + "/src/Records.csv";
 	BufferedReader br = null;
 	String line = "";
-	String csvSplitBy = ", ";
+	String csvSplitBy = " ";
 	Hashtable<String, String> entries = new Hashtable<String, String>();
 	
 	try {

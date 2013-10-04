@@ -2,9 +2,18 @@ import java.io.*;
 import java.net.*;
 
 public class TCPClient {
+	public Integer port;
+	public String serverIP;
+	
+	public TCPClient(String serverIPNo, Integer portNo)
+	{
+		serverIP = serverIPNo;
+		port = portNo;
+	}
+	
 	public static void main(String argv[]) throws Exception
 	{
-		new TCPClient().startClient();
+		new TCPClient(argv[0], Integer.parseInt(argv[1])).startClient();
 	}
 	
 	public void startClient() throws Exception
@@ -13,18 +22,20 @@ public class TCPClient {
 		String outputFromServer = null;
 		BufferedReader inFromUser = new BufferedReader(
 				new InputStreamReader(System.in));
-		Socket clientSocket = new Socket("localhost", 8000);
+		Socket clientSocket = new Socket(serverIP, port);
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
 						clientSocket.getInputStream()));
 		
-		/* will get prompted for username, unless blackl */
+		/* will get prompted for username, unless blacklisted */
 		outputFromServer = inFromServer.readLine();
-		System.out.println(outputFromServer);
+		System.out.print(outputFromServer);
 		if (!outputFromServer.equals("username: ")) {
+			System.out.println();
 			close(clientSocket);
 		}
+		
 		/* give username to server */
 		username = inFromUser.readLine();
 		outToServer.writeBytes(username + '\n');
@@ -35,7 +46,7 @@ public class TCPClient {
 		/* if not valid username, keep trying*/
 		while (outputFromServer.equals("Not a valid username, please try again")) {
 			System.out.println(outputFromServer);
-			System.out.println(inFromServer.readLine());
+			System.out.print(inFromServer.readLine());
 			
 			/* give username to server */
 			username = inFromUser.readLine();
@@ -46,7 +57,7 @@ public class TCPClient {
 		}
 		
 		/* enter password */
-		System.out.println(outputFromServer); // should say password
+		System.out.print(outputFromServer); // should say password
 		String password = inFromUser.readLine();
 		outToServer.writeBytes(password + '\n');
 		
@@ -56,7 +67,7 @@ public class TCPClient {
 		/* if not valid password, keep trying*/
 		while (outputFromServer.equals("Not a valid password, please try again")) {
 			System.out.println(outputFromServer);
-			System.out.println(inFromServer.readLine());
+			System.out.print(inFromServer.readLine());
 			
 			/* give username to server */
 			password = inFromUser.readLine();
@@ -72,7 +83,6 @@ public class TCPClient {
 			/* if so, close out */
 			System.out.println(outputFromServer);
 			close(clientSocket);
-			return;
 		}
 
 		/* else, give commands! */
@@ -81,7 +91,7 @@ public class TCPClient {
 			/* read all and any server output */
 			while (inFromServer.ready()) {
 				outputFromServer = inFromServer.readLine();
-				System.out.println(outputFromServer);
+				System.out.print(outputFromServer);
 				/* if output is a prompt for command, break and enter command */
 				if (outputFromServer.equals("> ")) {
 					break;
@@ -89,12 +99,17 @@ public class TCPClient {
 					/* otherwise, block for server to continue writing output */
 					while(!inFromServer.ready());
 				}
+				System.out.println();
 				
 			}
 
 			/* user enters a command */
 			command = inFromUser.readLine();
 			outToServer.writeBytes(command + '\n');
+			if (command.equals("logout")) {
+				System.out.println("Goodbye.");
+				break;
+			}
 
 			/* wait for response */
 			while (!inFromServer.ready());
@@ -102,13 +117,13 @@ public class TCPClient {
 		}
 		
 		close(clientSocket);
-		return;
 	}
 	
 	public void close(Socket clientSocket) throws Exception
 	{
 		System.out.println("Client socket now closing");
 		clientSocket.close();
+		System.exit(0);
 	}
 	
 }
