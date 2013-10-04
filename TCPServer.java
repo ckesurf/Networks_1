@@ -146,7 +146,7 @@ public class TCPServer {
 			currentStreams.add(outToClient);
 
 			System.out.println(username + " is logged in.");
-			outToClient.writeBytes("\n***** Welcome to Chris's Remote Server! *****\n> \n");
+			outToClient.writeBytes("***** Welcome to Chris's Remote Server! *****\n> \n");
 
 			/* take inputs from client, execute commands */
 			String clientCmd, output;
